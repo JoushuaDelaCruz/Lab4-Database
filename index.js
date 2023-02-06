@@ -205,21 +205,15 @@ app.post('/submitUser', (req, res) => {
     res.redirect('/logIn');
 });
 
-app.get("/dog/:id", (req, res) => {
-    var dog = req.params.id;
-
-    switch (parseInt(dog)) {
-        case 1: res.send("He said, 'Hi!':  <img src='/heyy.gif' style='width:250px;'>")
-        case 2: res.send("Isn't he cute?!:  <img src='/winkey.gif' style='width:250px;'>")
-        default: res.send(`Invalid dog id: ${dog}`)
-    }
-})
-
 app.use(express.static(__dirname + "/public"))
 
 app.get("*", (req, res) => {
     res.status(404)
-    res.send("<h2 style='color: red;'> Page not Found - 404 </h2> <img src='/error.gif' style='width:250px;'>")
+    res.send(`<h2 style='color: red;'> Page not Found - 404 </h2> <img src='/error.gif' style='width:250px;'>
+                <form action="/" method="GET">
+                <button>Homepage</button>
+                </form>`)
+    
 })
 
 app.listen(port, () => {
