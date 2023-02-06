@@ -79,7 +79,6 @@ app.get('/logIn', (req, res) => {
     <br>
     <button>Submit</button>
     </form>
-    <h2> Log In </h2>
     <form action='/signUp' method='post'>
     No Account yet? <button>Sign Up</button>
     </form>
