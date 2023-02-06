@@ -79,7 +79,7 @@ app.get('/logIn', (req, res) => {
     <br>
     <button>Submit</button>
     </form>
-    <form action='/signUp' method='post'>
+    <form action='/signUp' method='GET'>
     No Account yet? <button>Sign Up</button>
     </form>
     `;
