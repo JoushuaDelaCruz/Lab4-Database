@@ -1,221 +1,228 @@
-require('dotenv').config();
-const express = require('express');
-const session = require('express-session');
-const MongoStore = require('connect-mongo');
+require("./utils");
+require("dotenv").config();
+const express = require("express");
+const session = require("express-session");
+const MongoStore = require("connect-mongo");
 const port = process.env.PORT || 3000;
 const app = express();
 const bcrypt = require("bcrypt");
 const saltRounds = 12;
 
-app.use(express.urlencoded({ extended: false }))
+const database = include("databaseConnection");
+const db_utils = include("database/db_utils");
+const db_users = include("database/user");
+const db_tasks = include("database/task");
+const success = db_utils.printMySQLVersion();
+
+app.use(express.urlencoded({ extended: false }));
+app.set("view engine", "ejs");
+
 const expireTime = 1 * 60 * 60 * 1000;
 
-var users = []
+var users = [];
 
 /* secret information section */
 const mongodb_user = process.env.MONGODB_USERNAME;
 const mongodb_password = process.env.MONGODB_PASSWORD;
 const mongodb_session_secret = process.env.MONGO_SECRET_SESSIONS;
 
-const node_session_secret = process.env.NODE_SESSIONS_SECRET
+const node_session_secret = process.env.NODE_SESSIONS_SECRET;
 var mongoStore = MongoStore.create({
-    mongoUrl: `mongodb+srv://${mongodb_user}:${mongodb_password}@database.dqrkyqg.mongodb.net/sessions`,
-    crypto: {
-        secret: mongodb_session_secret
-    }
-})
+  mongoUrl: `mongodb+srv://${mongodb_user}:${mongodb_password}@database.dqrkyqg.mongodb.net/sessions`,
+  crypto: {
+    secret: mongodb_session_secret,
+  },
+});
 
-app.use(session({
+app.use(
+  session({
     secret: node_session_secret,
-    store: mongoStore, //default is memory store 
+    store: mongoStore, //default is memory store
     saveUninitialized: false,
-    resave: true
-}
-));
+    resave: true,
+  })
+);
 
 app.get("/", (req, res) => {
-    if (!req.session.authenticated) {
-        var html = `<h1> Welcome! </h1>
-                <form action='/logIn' method='GET'>
-                        <button>Login</button>
-                </form>
-                <form action='/signUp' method='GET'>
-                        <button>Sign up</button>
-                </form>`
-        res.send(html);
-    } else {
-        for (i = 0; i < users.length; i++) {
-            if (users[i].email == req.session.email) {
-                var name = users[i].name
-            }
-        }
-        var html = `
-        <h2> Hello, ${name} </h2>
-        <form action='/members' method='GET'>
-            <button>Go to Members Area</button>
-        </form>
-        <form action='/signOut' method='POST'>
-            <button type='submit'>Log out</button>
-        </form>
-        `;
-        res.send(html)
-    }
-})
+  if (!req.session.authenticated) {
+    res.render("index");
+  } else {
+    res.render("member", {
+      name: req.session.username,
+      user_type: req.session.user_type,
+    });
+  }
+});
 
-app.post('/signOut', (req, res) => {
-    req.session.destroy();
-    res.redirect("/")
-})
+app.post("/signOut", (req, res) => {
+  req.session.destroy();
+  res.redirect("/");
+});
 
-app.get('/logIn', (req, res) => {
-    var msg = req.query.msg
-    var html = `
-    <h2> Log In </h2>
-    <form action='/loggingIn' method='post'>
-    <br>
-    <input name='email' type='text' placeholder='email'>
-    <br>
-    <input name='password' type='password' placeholder='password'>
-    <br>
-    <button>Submit</button>
-    </form>
-    <form action='/signUp' method='GET'>
-    No Account yet? <button>Sign Up</button>
-    </form>
-    `;
-    if (msg) {
-        html += msg + "<br> <img src='/userNotFound.gif' style='width:300px;'>"
-    }
-    res.send(html);
+app.get("/logIn", (req, res) => {
+  var msg = req.query.msg;
+  res.render("login", { msg: msg });
+});
+
+app.get("/admin", async (req, res) => {
+  if (!req.session.authenticated) {
+    res.redirect("/");
+    return;
+  }
+  if (req.session.user_type == "user") {
+    res.redirect("/todos");
+    return;
+  }
+  const users = await db_users.getAllUsers(req.session.user_id);
+  res.render("admin", { name: req.session.username, users: users });
 });
 
 app.get("/members", (req, res) => {
-    if (!req.session.authenticated) {
-        res.redirect("/");
-    }
-    let randomNumber = Math.floor(Math.random() * 3) + 1
-    var html;
-    for (i = 0; i < users.length; i++) {
-        if (users[i].email == req.session.email) {
-            var name = users[i].name
-        }
-    }
-    if (randomNumber == 1) {
-        html = `<h1> He said, 'Hi, ${name}!': </h1> <img src='/heyy.gif' style='width:250px;'>`
-    } else if (randomNumber == 2) {
-        html = `<h1> Isn't he a cutey, ${name}?!</h1> <img src='/winkey.gif' style='width:250px;'> `
-    } else {
-        html = `<h1> Hey ${name}: </h1> <img src='/heyy.gif' style='width:250px;'>`
-    }
-    html += `<form action='/signOut' method='POST'>
-            <button type='submit'>Log out</button>
-            </form>
-            <form action="/" method="GET">
-            <button>Homepage</button>
-            </form>`
-    res.send(html)
-})
-
-app.post('/loggingIn', (req, res) => {
-    var email = req.body.email;
-    var password = req.body.password;
-
-
-    var usershtml = "";
-    for (i = 0; i < users.length; i++) {
-        if (users[i].email == email) {
-            if (bcrypt.compareSync(password, users[i].password)) {
-                req.session.authenticated = true;
-                req.session.email = email;
-                req.session.cookie.maxAge = expireTime;
-
-                res.redirect('/');
-                return;
-            }
-        }
-    }
-    msg = "User and Password not found"
-    //user and password combination not found
-    res.redirect(`/logIn?msg=${msg}`);
+  if (!req.session.authenticated) {
+    res.redirect("/");
+  }
+  let randomNumber = Math.floor(Math.random() * 4 + 1);
+  res.render("lounge", { name: req.session.username, number: randomNumber });
 });
 
-app.get('/loggedIn', (req, res) => {
-    if (!req.session.authenticated) {
-        res.redirect('/login');
+app.post("/loggingIn", async (req, res) => {
+  const username = req.body.username;
+  const password = req.body.password;
+  const user = await db_users.getUser(username);
+  console.log(user);
+
+  if (user) {
+    if (bcrypt.compareSync(password, user.password)) {
+      req.session.authenticated = true;
+      req.session.username = user.username;
+      req.session.user_id = user.user_id;
+      req.session.user_type = user.user_type;
+      req.session.cookie.maxAge = expireTime;
+
+      res.redirect("/loggedIn");
+      return;
     }
-    var html = `
-    You are logged in!
-    `;
-    res.send(html);
+  }
+  msg = "Username and Password not found";
+  //user and password combination not found
+  res.redirect(`/logIn?msg=${msg}`);
 });
 
+app.get("/users/:user_id", async (req, res) => {
+  const user_id = req.params.user_id;
 
-app.get('/signUp', (req, res) => {
-    var msg = req.query.msg
-    var html = `
-    <h3> Create a User </h3>
-    <form action='/submitUser' method='post'>
-    <input name='name' type='text' placeholder='Name'>
-    <br>
-    <input name='email' type='text' placeholder='Email'>
-    <br>
-    <input name='password' type='password' placeholder='Password'>
-    <br>
-    <button>Submit</button>
-    <br>
-    </form>
-    <form action="/" method="GET">
-    <button>Homepage</button>
-    </form>
-    `;
+  if (!req.session.authenticated || req.session.user_type == "user") {
+    res.redirect("/");
+    return;
+  }
+  const username = await db_users.getUserById(user_id);
+  const tasks = await db_tasks.getTasks(user_id);
 
-    if (msg) {
-        html += msg
-        html += "<br> <img src='/angry.gif' style='width:300px;'>"
-    }
+  console.log(username.username, tasks);
 
-    res.send(html);
+  res.render("users", {
+    user: username.username,
+    tasks: tasks,
+    name: req.session.username,
+  });
 });
 
-app.post('/submitUser', (req, res) => {
-    var name = req.body.name
-    var email = req.body.email;
-    var password = req.body.password;
-    if (!name || !email || !password) {
-        let message = "<h4 style='color:red;'> Please provide the following fields: <h4> <ul>"
-        if (!name) {
-            message += "<li> Name </li>"
-        }
-        if (!email) {
-            message += "<li> email </li>"
-        }
-        if (!password) {
-            message += "<li> Password </li>"
-        }
-        message += "</ul>"
-        res.redirect(`/signUp?msg=${message}`)
-    }
+app.get("/todos", async (req, res) => {
+  const empty = req.query.empty;
+  if (!req.session.authenticated) {
+    res.redirect("/");
+    return;
+  }
+  if (req.session.user_type === "admin") {
+    res.redirect("/admin");
+    return;
+  }
+  const tasks = await db_tasks.getTasks(req.session.user_id);
 
-    var hashedPassword = bcrypt.hashSync(password, saltRounds)
-
-    users.push({ name: name, email: email, password: hashedPassword });
-
-    console.log(users);
-
-    res.redirect('/logIn');
+  res.render("tasks", {
+    name: req.session.username,
+    empty: empty,
+    tasks: tasks,
+  });
 });
 
-app.use(express.static(__dirname + "/public"))
+app.post("/addTask", async (req, res) => {
+  const user_id = req.session.user_id;
+  const description = req.body.task;
+  if (description === "") {
+    res.redirect("/todos?empty=true");
+    return;
+  }
+  await db_tasks.createTask({
+    user_id: user_id,
+    description: description,
+  });
+  res.redirect("/todos");
+});
+
+app.get("/loggedIn", (req, res) => {
+  if (!req.session.authenticated) {
+    res.redirect("/login");
+    return;
+  }
+  if (req.session.user_type === "admin") {
+    res.redirect("/admin");
+  }
+  if (req.session.user_type === "user") {
+    res.redirect("/todos");
+  }
+});
+
+app.get("/signUp", async (req, res) => {
+  let msg = req.query.msg;
+  let usernameNotUnique = req.query.usernameNotUnique;
+  if (msg) {
+    msg = JSON.parse(decodeURIComponent(msg));
+  }
+  res.render("signUp", { msg: msg, username: usernameNotUnique });
+});
+
+app.post("/submitUser", async (req, res) => {
+  var name = req.body.name;
+  var email = req.body.email;
+  var password = req.body.password;
+  let message = [];
+  if (!name || !email || !password) {
+    if (!name) {
+      message.push("Name");
+    }
+    if (!email) {
+      message.push("Email");
+    }
+    if (!password) {
+      message.push("Password");
+    }
+    message = encodeURIComponent(JSON.stringify(message));
+    res.redirect(`/signUp?msg=${message}`);
+    return;
+  }
+
+  const hashedPassword = bcrypt.hashSync(password, saltRounds);
+  const success = await db_users.createUser({
+    name: name,
+    email: email,
+    password: hashedPassword,
+  });
+
+  if (success) {
+    res.redirect("/login");
+  } else {
+    res.redirect("/signUp?usernameUnique=true");
+  }
+});
+
+app.use(express.static(__dirname + "/public"));
 
 app.get("*", (req, res) => {
-    res.status(404)
-    res.send(`<h2 style='color: red;'> Page not Found - 404 </h2> <img src='/error.gif' style='width:250px;'>
-                <form action="/" method="GET">
-                <button>Homepage</button>
-                </form>`)
-    
-})
+  res.status(404);
+  res.render("404");
+});
 
 app.listen(port, () => {
-    console.log("Node application listening to port " + port)
-})
+  console.log("Node application listening to port " + port);
+});

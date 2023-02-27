@@ -1,0 +1,30 @@
+<%- include("templates/header") %> 
+<h3> Create a User </h3>
+<form action='/submitUser' method='post'>
+<input name='name' type='text' placeholder='Name'>
+<br>
+<input name='email' type='text' placeholder='Email'>
+<br>
+<input name='password' type='password' placeholder='Password'>
+<br>
+<button>Submit</button>
+<br>
+</form>
+<form action="/" method="GET">
+<button>Homepage</button>
+</form>
+<% if (msg) { %>
+    <h4 style='color:red;'> Please provide the following fields: <h4>
+    <ul>
+        <% let i=0; %>
+		<% for(i=0; i < msg.length; i++) { %>
+        <li> <b> <%- msg[i] %> </b> </li>
+        <% } %> 
+    </ul>
+    <br> <img src='/angry.gif' style='width:300px;'>
+<% } %>
+<% if (username) { %>
+    <h4 style='color:red;'> Username must be unique! <h4>
+    <br> <img src='/angry.gif' style='width:300px;'>
+<% } %>
+<%- include("templates/footer") %> 

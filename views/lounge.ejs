@@ -1,0 +1,20 @@
+<%- include("templates/header") %> 
+<form action='/signOut' method='POST'>
+<button type='submit'>Log out</button>
+</form>
+<form action="/" method="GET">
+<button>Homepage</button>
+</form>
+<% if (number && name) { %>
+    <%  if (number == 1) { %> 
+        <h1> He said, 'Hi, <%= name%>!': </h1> 
+        <img src='/heyy.gif' style='width:250px;'>
+    <% } else if (number == 2) { %>
+        <h1> Isn't he a cutey, <%= name%>?!</h1> 
+        <img src='/winkey.gif' style='width:250px;'>
+    <% } else { %>
+        <h1> Hey <%= name%>: </h1> 
+        <img src='/fluffy.gif' style='width:250px;'>
+    <% } %>  
+<% } %>  
+<%- include("templates/footer") %> 

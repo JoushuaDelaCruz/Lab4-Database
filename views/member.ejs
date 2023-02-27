@@ -1,0 +1,21 @@
+<%- include("templates/header") %> 
+<h2> Hello, <%= name %> </h2>
+<form action='/members' method='GET'>
+    <button>Go to Members Area</button>
+</form>
+<br />
+<%  if (user_type === "admin") { %> 
+    <form action='/admin' method='GET'>
+        <button>Go to Users</button>
+    </form>
+<% } else { %>
+    <form action='/todos' method='GET'>
+        <button>Go to Tasks</button>
+    </form>
+<% } %>  
+<br />
+<form action='/signOut' method='POST'>
+<button type='submit'>Log out</button>
+</form>
+<br />
+<%- include("templates/footer") %> 

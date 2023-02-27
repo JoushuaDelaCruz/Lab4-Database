@@ -1,0 +1,18 @@
+<%- include("templates/header") %> 
+<h2> Log In </h2>
+<form action='/loggingIn' method='post'>
+<br>
+<input name='username' type='text' placeholder='username'>
+<br>
+<input name='password' type='password' placeholder='password'>
+<br>
+<button>Submit</button>
+</form>
+<form action='/signUp' method='GET'>
+No Account yet? <button>Sign Up</button>
+</form>
+<% if (msg) { %>
+    <h2><%= msg %></h2>
+    <br> <img src='/userNotFound.gif' style='width:300px;'>
+<% } %>
+<%- include("templates/footer") %> 

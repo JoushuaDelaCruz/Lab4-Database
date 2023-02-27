@@ -1,0 +1,10 @@
+<table border="1px" width="300px"> 
+    <tr>
+        <th>#</th>
+        <th>Description</th>
+    </tr>
+    <% let i=0; %>
+        <% for(i=0; i < tasks.length; i++) { %>
+        <%- include('./task', {task: tasks[i].description, index: i+1})  %> 
+    <% } %> 
+</table>

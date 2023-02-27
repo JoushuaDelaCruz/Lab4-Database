@@ -1,0 +1,23 @@
+<%- include("templates/header") %> 
+<%  if (empty) { %> 
+    <h2 style="color: red"> Come on, <%=name %>, please provide a task!</h2>
+<% } else { %>
+    <h1> So, What's our plan? <%=name %> </h1>
+<% } %>  
+<%  if (tasks.length == 0) { %> 
+    <h3> You do not have any tasks yet! </h3>
+<% } else { %>
+    <%- include('templates/tasksBoard', {tasks: tasks})  %> 
+<% } %> 
+<br>
+<form action='/addTask' method='post'>
+<input name='task' type='text' placeholder='What needs to be done?'>
+<button type='submit'> Add Task </button>
+</form>
+<br>
+<form action='/' method='GET'>
+    <button>Go to Homepage</button>
+</form>
+<br>
+<img src='/task.gif' style='width:100px;'>
+<%- include("templates/footer") %> 

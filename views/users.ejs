@@ -1,0 +1,17 @@
+<%- include("templates/header") %> 
+<h1> Hey, <%=name %> </h1>
+<h3 style="color: green"> Viewing tasks of <%=user%> </h3>
+<%  if (tasks.length == 0) { %> 
+    <h4 style="color: brown;"> <%=user%> does not have any task yet </h4>
+<% } else { %>
+    <%- include('templates/tasksBoard', {tasks: tasks})  %> 
+<% } %>
+<br> 
+<form action='/' method='GET'>
+    <button>Go to Homepage</button>
+</form>
+<br>
+<form action='/admin' method='GET'>
+    <button>See other Users</button>
+</form>
+<%- include("templates/footer") %> 
