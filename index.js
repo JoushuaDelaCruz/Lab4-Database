@@ -179,7 +179,7 @@ app.get("/signUp", async (req, res) => {
   if (msg) {
     msg = JSON.parse(decodeURIComponent(msg));
   }
-  res.render("signUp", { msg: msg, username: usernameNotUnique });
+  res.render("signUp", { msg: msg, userNotUnique: usernameNotUnique });
 });
 
 app.post("/submitUser", async (req, res) => {
@@ -212,7 +212,7 @@ app.post("/submitUser", async (req, res) => {
   if (success) {
     res.redirect("/login");
   } else {
-    res.redirect("/signUp?usernameUnique=true");
+    res.redirect(`/signUp?usernameNotUnique=${true}`);
   }
 });
 
